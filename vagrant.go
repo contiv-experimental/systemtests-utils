@@ -26,7 +26,7 @@ import (
 // Vagrant implements a vagrant based testbed
 type Vagrant struct {
 	expectedNodes int
-	nodes         []TestbedNode
+	nodes         map[string]TestbedNode
 }
 
 // Setup brings up a vagrant testbed
@@ -124,7 +124,7 @@ func (v *Vagrant) Setup(start bool, env string, numNodes int) error {
 		if node, err = NewVagrantNode(nodeName, port, privKeyFile); err != nil {
 			return err
 		}
-		v.nodes = append(v.nodes, TestbedNode(node))
+		v.nodes[node.GetName()] = TestbedNode(node)
 	}
 
 	return nil
@@ -143,11 +143,21 @@ func (v *Vagrant) Teardown() {
 			err, output)
 	}
 
-	v.nodes = []TestbedNode{}
+	v.nodes = map[string]TestbedNode{}
 	v.expectedNodes = 0
+}
+
+// GetNode obtains a node by name.
+func (v *Vagrant) GetNode(name string) TestbedNode {
+	return v.nodes[name]
 }
 
 // GetNodes returns the nodes in a vagrant setup
 func (v *Vagrant) GetNodes() []TestbedNode {
-	return v.nodes
+	var ret []TestbedNode
+	for _, value := range v.nodes {
+		ret = append(ret, value)
+	}
+
+	return ret
 }

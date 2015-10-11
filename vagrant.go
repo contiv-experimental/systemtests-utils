@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+	"sync"
 
 	log "github.com/Sirupsen/logrus"
 )
@@ -31,6 +32,8 @@ type Vagrant struct {
 
 // Setup brings up a vagrant testbed
 func (v *Vagrant) Setup(start bool, env string, numNodes int) error {
+	v.nodes = map[string]TestbedNode{}
+
 	vCmd := &VagrantCommand{ContivNodes: numNodes, ContivEnv: env}
 
 	if start {
@@ -160,4 +163,39 @@ func (v *Vagrant) GetNodes() []TestbedNode {
 	}
 
 	return ret
+}
+
+// IterateNodes walks each host and executes the function supplied. On error,
+// it waits for all hosts to complete before returning the error.
+func (v *Vagrant) IterateNodes(fn func(TestbedNode) error) error {
+	wg := sync.WaitGroup{}
+	nodes := v.GetNodes()
+	errChan := make(chan error, len(nodes))
+
+	for _, node := range nodes {
+		wg.Add(1)
+
+		go func(node TestbedNode) {
+			if err := fn(node); err != nil {
+				errChan <- fmt.Errorf(`Error: "%v" on host: %q"`, err, node.GetName())
+			}
+			wg.Done()
+		}(node)
+	}
+
+	wg.Wait()
+
+	select {
+	case err := <-errChan:
+		return err
+	default:
+		return nil
+	}
+}
+
+// SSHAllNodes will ssh into each host and run the specified command.
+func (v *Vagrant) SSHAllNodes(cmd string) error {
+	return v.IterateNodes(func(node TestbedNode) error {
+		return node.RunCommand(cmd)
+	})
 }

@@ -128,7 +128,7 @@ func ServiceActionAndWaitForState(n vagrantssh.TestbedNode, srv string, timeoutS
 
 //ServiceStartAndWaitForUp starts a systemd service unit and waits for it to be up
 func ServiceStartAndWaitForUp(n vagrantssh.TestbedNode, srv string, timeoutSec int) (string, error) {
-	return serviceActionAndWaitForState(n, srv, timeoutSec, "active", ServiceStart)
+	return ServiceActionAndWaitForState(n, srv, timeoutSec, "active", ServiceStart)
 }
 
 //ServiceStop stops a systemd service unit
@@ -143,7 +143,7 @@ func ServiceRestart(n vagrantssh.TestbedNode, srv string) (string, error) {
 
 //ServiceRestartAndWaitForUp starts a systemd service unit and waits for it to be up
 func ServiceRestartAndWaitForUp(n vagrantssh.TestbedNode, srv string, timeoutSec int) (string, error) {
-	return serviceActionAndWaitForState(n, srv, timeoutSec, "active", ServiceRestart)
+	return ServiceActionAndWaitForState(n, srv, timeoutSec, "active", ServiceRestart)
 }
 
 //ServiceLogs queries and returns upto maxLogLines lines from systemd service unit logs
